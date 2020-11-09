@@ -1,0 +1,18 @@
+# Output files
+output/
+app/engines/neural/resources/output
+
+#datasets
+data/
+
+# IntelliJ project files
+.idea/
+*.iml
+_MACOSX
+
+.env
+.vscode/
+**/__pycache__
+**/venv/
+
+.pytest_cache/**
