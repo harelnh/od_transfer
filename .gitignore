@@ -2,13 +2,15 @@
 output/
 app/engines/neural/resources/output
 
-#datasets
+#datasets & models
 data/
+resources/
 
 # IntelliJ project files
 .idea/
 *.iml
 _MACOSX
+.DS_Store
 
 .env
 .vscode/
@@ -16,3 +18,4 @@ _MACOSX
 **/venv/
 
 .pytest_cache/**
+
