@@ -48,16 +48,15 @@ def pooling_output(x):
 
 # iterate over data
 image_paths_cache_path = 'resources/cache/public_jewellery_image_paths.pkl'
-descriptors_cache_path = 'resources/cache/public_jewellery_descriptors.pkl'
+index_path = 'resources/cache/public_jewellery_index'
 image_paths = []
-descriptors = []
 
 if os.path.exists(image_paths_cache_path):
-    with open(image_paths_cache_path,'rb') as f:
+    with open(image_paths_cache_path, 'rb') as f:
         image_paths = pickle.load(f)
-    with open(descriptors_cache_path,'rb') as f:
-        descriptors = pickle.load(f)
+    index = faiss.read_index(index_path)
 else:
+    descriptors = []
     model.to(DEVICE)
     with torch.no_grad():
         model.eval()
@@ -66,21 +65,22 @@ else:
             descriptors.append(result.cpu().view(1, -1).numpy())
             image_paths.append(paths)
             torch.cuda.empty_cache()
-    with open(descriptors_cache_path,'wb') as f:
-        pickle.dump(descriptors,f)
+
+    index = faiss.IndexFlatL2(2048)
+    descriptors = np.vstack(descriptors)
+    index.add(descriptors)
+
+    faiss.write_index(index, index_path)
     with open(image_paths_cache_path,'wb') as f:
         pickle.dump(image_paths,f)
 
-index = faiss.IndexFlatL2(2048)
-descriptors = np.vstack(descriptors)
-index.add(descriptors)
-
-query_image = 'data/query_images/rings/gold_single_diamond.jpg'
+query_image = 'data/query_images/rings/gold_with_6_heart_diamonds.jpg'
 img = Image.open(query_image)
 
 input_tensor = transforms_(img)
 input_tensor = input_tensor.view(1, *input_tensor.shape)
 with torch.no_grad():
+    model.eval()
     query_descriptors = pooling_output(input_tensor.to(DEVICE)).cpu().numpy()
     distance, indices = index.search(query_descriptors.reshape(1, 2048), 9)
 
