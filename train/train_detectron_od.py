@@ -13,8 +13,8 @@ from detectron2.data.datasets import register_coco_instances
 from detectron2.utils.visualizer import ColorMode
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
-register_coco_instances("ring_train", {}, 'data/jewellery/ring/train/instances_default.json', "data/jewellery/ring/train/")
-register_coco_instances("ring_dev", {}, "data/jewellery/ring/dev/instances_default.json", "data/jewellery/ring/dev/")
+register_coco_instances("ring_train", {}, 'data/our_jewellery/ring/train/instances_default.json', "data/our_jewellery/ring/train/")
+register_coco_instances("ring_dev", {}, "data/our_jewellery/ring/dev/instances_default.json", "data/our_jewellery/ring/dev/")
 
 from detectron2.engine import DefaultTrainer
 

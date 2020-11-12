@@ -31,11 +31,11 @@ if is_extract_bb_test:
     metadata_path = 'resources/od_predictors/ring_11_11/metadata.pkl'
     model_wrapper = DetectronWrapper(model_path, metadata_path)
 
-    dir_path = 'data/jewellery/ring/train/'
+    dir_path = 'data/our_jewellery/ring/train/'
     for file_name in os.listdir(dir_path):
         if not file_name.endswith('g'):
             continue
         bb_imgs = model_wrapper.extract_bb_imgs(dir_path + file_name)
 
-    img_path = 'data/jewellery/ring/dev/r12.jpeg'
+    img_path = 'data/our_jewellery/ring/dev/r12.jpeg'
     bb_imgs = model_wrapper.extract_bb_imgs(img_path)
