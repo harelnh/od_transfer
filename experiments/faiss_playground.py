@@ -74,8 +74,8 @@ else:
     with open(image_paths_cache_path,'wb') as f:
         pickle.dump(image_paths,f)
 
-query_image = 'data/query_images/rings/gold_with_6_heart_diamonds.jpg'
-img = Image.open(query_image)
+query_image = 'data/query_images/rings/Screen Shot 2020-11-13 at 10.02.43.png'
+img = Image.open(query_image).convert('RGB')
 
 input_tensor = transforms_(img)
 input_tensor = input_tensor.view(1, *input_tensor.shape)

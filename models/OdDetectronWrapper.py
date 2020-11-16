@@ -18,7 +18,7 @@ from detectron2.utils.visualizer import ColorMode
 
 
 
-class DetectronWrapper:
+class OdDetectronWrapper:
 
     def __init__(self, model_path, metadata_path):
         cfg = get_cfg()
