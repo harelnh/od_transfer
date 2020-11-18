@@ -15,6 +15,7 @@ from detectron2.engine import DefaultTrainer
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 from detectron2.utils.visualizer import ColorMode
+from utils.image_preprocess import img_2_bb_img
 
 
 
@@ -37,11 +38,14 @@ class OdDetectronWrapper:
             print('error loading model and metadata')
             print(e)
 
-    def extract_bb_imgs(self, im_path):
-        print(im_path)
-        im = cv2.imread(im_path)
-        outputs = self.model(im)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
-        print(outputs)
+    def detect(self, img):
+        if isinstance(img, str):
+            img = cv2.imread(img)
+
+        detections = self.model(img)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
+        bbs = detections['instances']._fields['pred_boxes'].tensor.detach().cpu().numpy()
+        return bbs
+
 
 
 

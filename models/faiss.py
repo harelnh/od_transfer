@@ -10,6 +10,18 @@ import os
 import faiss
 
 
+INDEX_FILE_NAME = 'index'
+IMGS_PATHS_FILE_NAME = 'imgs_path.pkl'
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+model = models.resnet50(pretrained=True)
+image_paths_cache_path = 'resources/faiss_index/ring_public/public_jewellery_image_paths.pkl'
+index_path = 'resources/faiss_index/ring_public/public_jewellery_index'
+with open(image_paths_cache_path, 'rb') as f:
+    imgs_path = pickle.load(f)
+index = faiss.read_index(index_path)
+
+
 class ImageFolderWithPaths(datasets.ImageFolder):
     """Custom dataset that includes image file paths. Extends
     torchvision.datasets.ImageFolder
@@ -32,11 +44,7 @@ transforms_ = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                         std=[0.229, 0.224, 0.225])
 ])
-dataset = ImageFolderWithPaths('data/ring_dataset', transforms_) # our custom dataset
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=1)
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = models.resnet50(pretrained=True)
 
 def pooling_output(x):
     global model
@@ -46,16 +54,11 @@ def pooling_output(x):
             break
     return x
 
-# iterate over data
-image_paths_cache_path = 'resources/cache/public_jewellery_image_paths.pkl'
-index_path = 'resources/cache/public_jewellery_index'
-imgs_path = []
 
-if os.path.exists(image_paths_cache_path):
-    with open(image_paths_cache_path, 'rb') as f:
-        imgs_path = pickle.load(f)
-    index = faiss.read_index(index_path)
-else:
+def create_index(imgs_dir_path, out_dir_path):
+
+    dataset = ImageFolderWithPaths(imgs_dir_path, transforms_) # our custom dataset
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1)
     descriptors = []
     model.to(DEVICE)
     with torch.no_grad():
@@ -70,22 +73,33 @@ else:
     descriptors = np.vstack(descriptors)
     index.add(descriptors)
 
-    faiss.write_index(index, index_path)
-    with open(image_paths_cache_path,'wb') as f:
+    faiss.write_index(index, out_dir_path + '/' + INDEX_FILE_NAME)
+    with open(out_dir_path + '/' + IMGS_PATHS_FILE_NAME, 'wb') as f:
         pickle.dump(imgs_path, f)
 
-query_image = 'data/query_images/rings/Screen Shot 2020-11-13 at 10.02.43.png'
-img = Image.open(query_image).convert('RGB')
 
-input_tensor = transforms_(img)
-input_tensor = input_tensor.view(1, *input_tensor.shape)
-with torch.no_grad():
-    model.eval()
-    query_descriptors = pooling_output(input_tensor.to(DEVICE)).cpu().numpy()
-    distance, indices = index.search(query_descriptors.reshape(1, 2048), 9)
+def load_index(dir_path):
+    global index, imgs_path
+    with open(dir_path + '/' + IMGS_PATHS_FILE_NAME, 'rb') as f:
+        imgs_path = pickle.load(f)
+    index = faiss.read_index(dir_path + '/' + INDEX_FILE_NAME)
 
-fig, ax = plt.subplots(3, 3, figsize=(15,15))
-for file_index, ax_i in zip(indices[0], np.array(ax).flatten()):
-    ax_i.imshow(plt.imread(imgs_path[file_index][0]))
 
-plt.show()
+def query_index(img, is_plot = False):
+
+    if isinstance(img, str):
+        img = Image.open(img).convert('RGB')
+    input_tensor = transforms_(img)
+    input_tensor = input_tensor.view(1, *input_tensor.shape)
+    with torch.no_grad():
+        model.eval()
+        query_descriptors = pooling_output(input_tensor.to(DEVICE)).cpu().numpy()
+        distance, indices = index.search(query_descriptors.reshape(1, 2048), 9)
+
+    if is_plot:
+        fig, ax = plt.subplots(3, 3, figsize=(15, 15))
+        for file_index, ax_i in zip(indices[0], np.array(ax).flatten()):
+            ax_i.imshow(plt.imread(imgs_path[file_index][0]))
+        plt.show()
+
+    return distance, indices

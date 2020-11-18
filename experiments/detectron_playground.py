@@ -1,33 +1,37 @@
 import torch, torchvision
 import detectron2
 import os
-import numpy as np
-import os
-
-import json
 import cv2
-import random
-import wget
-
-from detectron2.utils.logger import setup_logger
-from google.colab.patches import cv2_imshow
-from detectron2 import model_zoo
-from detectron2.engine import DefaultPredictor
-from detectron2.config import get_cfg
-from detectron2.utils.visualizer import Visualizer
-from detectron2.data import MetadataCatalog, DatasetCatalog
-from detectron2.structures import BoxMode
-from detectron2.engine import DefaultTrainer
-from detectron2.evaluation import COCOEvaluator, inference_on_dataset
-from detectron2.data import build_detection_test_loader
-from detectron2.utils.visualizer import ColorMode
-
+import numpy as np
 from models.OdDetectronWrapper import OdDetectronWrapper
 from models.SegmentationDetectronWrapper import SegmentationDetectronWrapper
+import models.faiss as faiss
+from utils.image_preprocess import img_2_bb_img
 
 
 is_extract_bb_test = False
-is_segment_ring = True
+is_segment_ring = False
+is_e2e_test = True
+
+if is_e2e_test:
+    query_img = 'data/query_images/rings/plain_gold.jpeg'
+    img = cv2.imread(query_img)
+
+    model_path = 'resources/object_detection/ring_11_11/model_final.pth'
+    metadata_path = 'resources/object_detection/ring_11_11/metadata.pkl'
+    detection_model = OdDetectronWrapper(model_path, metadata_path)
+
+    model_path = 'resources/segmentation/ring_16_11/model_final.pth'
+    metadata_path = 'resources/segmentation/ring_16_11/metadata.pkl'
+    seg_model = SegmentationDetectronWrapper(model_path, metadata_path)
+
+    bbs = detection_model.detect(img)
+    for bb in bbs:
+        bb_img = img_2_bb_img(img, bb)
+        polygon = seg_model.segment_img(bb_img)
+        faiss.query_index(bb_img)
+
+
 
 if is_segment_ring:
     model_path = 'resources/segmentation/ring_16_11/model_final.pth'
@@ -40,8 +44,6 @@ if is_segment_ring:
             continue
         segmentation_img = model_wrapper.segment_img(dir_path + file_name)
 
-    img_path = 'data/our_jewellery/ring/dev/r12.jpeg'
-    bb_imgs = model_wrapper.extract_bb_imgs(img_path)
 
 if is_extract_bb_test:
     model_path = 'resources/object_detection/ring_11_11/model_final.pth'
@@ -52,7 +54,7 @@ if is_extract_bb_test:
     for file_name in os.listdir(dir_path):
         if not file_name.endswith('g'):
             continue
-        bb_imgs = model_wrapper.extract_bb_imgs(dir_path + file_name)
+        bb_imgs = model_wrapper.detect(dir_path + file_name)
 
     img_path = 'data/our_jewellery/ring/dev/r12.jpeg'
-    bb_imgs = model_wrapper.extract_bb_imgs(img_path)
+    bb_imgs = model_wrapper.detect(img_path)

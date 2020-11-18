@@ -39,20 +39,25 @@ class SegmentationDetectronWrapper:
             print('error loading model and metadata')
             print(e)
 
-    def segment_img(self, im_path):
-        print(im_path)
-        im = cv2.imread(im_path)
+
+    def segment_img(self, im, is_plot = False):
+
         outputs = self.model(im)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
         v = Visualizer(im[:, :, ::-1],
                        metadata=self.metadata,
                        scale=0.8,
                        instance_mode=ColorMode.IMAGE)
         v = v.draw_instance_predictions(outputs["instances"].to("cpu"))  # Passing the predictions to CPU from the GPU
-        # cv2.imshow('segmented ring', v.get_image()[:, :, ::-1])
-        # cv2.waitKey()
 
-        plt.imshow(v.get_image()[:, :, ::-1])
-        plt.show()
+        if is_plot:
+            plt.imshow(v.get_image()[:, :, ::-1])
+            plt.show()
+
+        return outputs
+
+    def segment_img_file(self, im_path):
+        im = cv2.imread(im_path)
+        self.segment_img(im)
 
 
 
